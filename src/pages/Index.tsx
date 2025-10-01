@@ -33,6 +33,8 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import * as XLSX from 'xlsx';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { useNavigate } from 'react-router-dom';
+import GibddCheckDialog from '@/components/GibddCheckDialog';
 
 interface Fine {
   id: number;
@@ -62,6 +64,16 @@ export default function Index() {
   const [selectedFineId, setSelectedFineId] = useState<number | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('gibdd_auth');
+    toast({
+      title: 'Выход выполнен',
+      description: 'Вы вышли из системы',
+    });
+    navigate('/login');
+  };
 
   const fetchFines = async () => {
     try {
@@ -285,6 +297,10 @@ export default function Index() {
                         <Icon name="Download" size={18} />
                         Экспорт в Excel
                       </Button>
+                      <Button onClick={handleLogout} variant="destructive" className="w-full justify-start gap-2">
+                        <Icon name="LogOut" size={18} />
+                        Выйти из системы
+                      </Button>
                     </div>
 
                     <div className="space-y-4">
@@ -424,10 +440,13 @@ export default function Index() {
                     Управление записями и удаление из базы
                   </CardDescription>
                 </div>
-                <Button onClick={exportToExcel} variant="outline" className="gap-2">
-                  <Icon name="Download" size={16} />
-                  Экспорт в Excel
-                </Button>
+                <div className="flex gap-2">
+                  <GibddCheckDialog />
+                  <Button onClick={exportToExcel} variant="outline" className="gap-2">
+                    <Icon name="Download" size={16} />
+                    Экспорт в Excel
+                  </Button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

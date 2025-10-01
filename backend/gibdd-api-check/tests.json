@@ -1,0 +1,30 @@
+{
+  "tests": [
+    {
+      "name": "Check fines with valid credentials",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "licenseNumber": "7712345678",
+        "stsNumber": "77АВ123456"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true,
+        "foundFines": "number"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Check fines without credentials",
+      "method": "POST",
+      "path": "/",
+      "body": {},
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
