@@ -1,4 +1,6 @@
 {
+  "gibdd-fines": "https://functions.poehali.dev/01bce009-aa74-42ea-86d0-482816a6f06f",
+  "vehicle-check": "https://functions.poehali.dev/963eab3a-4c70-4443-9ba8-295a8917117e",
   "extended-api": "https://functions.poehali.dev/869845df-0ee4-4954-8a12-9b892d8d91df",
   "gibdd-api-check": "https://functions.poehali.dev/1b7c745a-4443-4ad7-89fa-14fdd174a2d5",
   "fines-api": "https://functions.poehali.dev/e4da8fe6-8316-4b83-8d3e-1d73beb1a0bd"

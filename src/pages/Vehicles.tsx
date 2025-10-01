@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Dialog,
   DialogContent,
@@ -72,6 +73,8 @@ export default function Vehicles() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [checkResult, setCheckResult] = useState<any>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -80,8 +83,60 @@ export default function Vehicles() {
     model: '',
     year: '',
     color: '',
-    owner: ''
+    owner: '',
+    vin: ''
   });
+
+  const VEHICLE_CHECK_API = 'https://functions.poehali.dev/963eab3a-4c70-4443-9ba8-295a8917117e';
+
+  const checkVehicle = async () => {
+    if (!formData.licensePlate) {
+      toast({
+        title: 'Ошибка',
+        description: 'Введите госномер',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setChecking(true);
+    setCheckResult(null);
+
+    try {
+      const response = await fetch(`${VEHICLE_CHECK_API}?license_plate=${formData.licensePlate}`);
+      const data = await response.json();
+      setCheckResult(data);
+
+      if (data.found) {
+        setFormData({
+          ...formData,
+          brand: data.brand || '',
+          model: data.model || '',
+          year: data.year?.toString() || '',
+          color: data.color || '',
+          vin: data.vin || ''
+        });
+        toast({
+          title: 'ТС найдено в базе',
+          description: `${data.brand} ${data.model}, ${data.year}`,
+        });
+      } else {
+        toast({
+          title: 'ТС не найдено',
+          description: 'Заполните данные вручную',
+          variant: 'default'
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Ошибка проверки',
+        description: 'Не удалось проверить ТС',
+        variant: 'destructive'
+      });
+    } finally {
+      setChecking(false);
+    }
+  };
 
   const filteredVehicles = vehicles.filter(vehicle =>
     vehicle.licensePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -101,8 +156,9 @@ export default function Vehicles() {
       violations: 0
     };
     saveVehicles([...vehicles, newVehicle]);
-    setFormData({ licensePlate: '', brand: '', model: '', year: '', color: '', owner: '' });
+    setFormData({ licensePlate: '', brand: '', model: '', year: '', color: '', owner: '', vin: '' });
     setIsAddDialogOpen(false);
+    setCheckResult(null);
     toast({
       title: 'Автомобиль добавлен',
       description: 'Новое ТС успешно добавлено в реестр',
@@ -144,15 +200,48 @@ export default function Vehicles() {
               <DialogDescription>Заполните данные автомобиля</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
+              {checkResult && checkResult.found && (
+                <Alert className="bg-green-50 border-green-200">
+                  <Icon name="CheckCircle2" size={18} className="text-green-600" />
+                  <AlertDescription className="ml-2">
+                    ТС найдено в базе! Данные автоматически заполнены.
+                    {checkResult.fines && checkResult.fines.count > 0 && (
+                      <span className="block text-red-600 mt-1">
+                        Внимание: {checkResult.fines.count} штрафов на сумму {checkResult.fines.unpaid_amount} ₽
+                      </span>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="col-span-2">
                   <Label htmlFor="licensePlate">Госномер</Label>
-                  <Input
-                    id="licensePlate"
-                    value={formData.licensePlate}
-                    onChange={(e) => setFormData({ ...formData, licensePlate: e.target.value })}
-                    placeholder="А123БВ777"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="licensePlate"
+                      value={formData.licensePlate}
+                      onChange={(e) => setFormData({ ...formData, licensePlate: e.target.value.toUpperCase() })}
+                      placeholder="А123БВ777"
+                    />
+                    <Button 
+                      type="button" 
+                      onClick={checkVehicle}
+                      disabled={checking || !formData.licensePlate}
+                    >
+                      {checking ? (
+                        <>
+                          <Icon name="Loader2" size={18} className="mr-2 animate-spin" />
+                          Проверка...
+                        </>
+                      ) : (
+                        <>
+                          <Icon name="Search" size={18} className="mr-2" />
+                          Проверить
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="brand">Марка</Label>
@@ -191,6 +280,16 @@ export default function Vehicles() {
                   />
                 </div>
                 <div>
+                  <Label htmlFor="vin">VIN</Label>
+                  <Input
+                    id="vin"
+                    value={formData.vin}
+                    onChange={(e) => setFormData({ ...formData, vin: e.target.value.toUpperCase() })}
+                    placeholder="XTA..."
+                    maxLength={17}
+                  />
+                </div>
+                <div>
                   <Label htmlFor="owner">Владелец</Label>
                   <Input
                     id="owner"
@@ -201,7 +300,11 @@ export default function Vehicles() {
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                <Button variant="outline" onClick={() => {
+                  setIsAddDialogOpen(false);
+                  setCheckResult(null);
+                  setFormData({ licensePlate: '', brand: '', model: '', year: '', color: '', owner: '', vin: '' });
+                }}>
                   Отмена
                 </Button>
                 <Button onClick={handleAddVehicle}>Добавить</Button>

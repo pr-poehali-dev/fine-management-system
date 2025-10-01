@@ -1,0 +1,33 @@
+{
+  "tests": [
+    {
+      "name": "Get all fines",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": [],
+      "bodyMatcher": "type"
+    },
+    {
+      "name": "Create new fine",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "violation_number": "TEST-001",
+        "driver_name": "Тестов Тест Тестович",
+        "license_plate": "Т001ТТ777",
+        "violation_type": "Превышение скорости",
+        "violation_date": "2024-01-01T12:00:00Z",
+        "amount": 5000,
+        "status": "Не оплачен",
+        "location": "Москва, МКАД"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "id": "number",
+        "violation_number": "TEST-001"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

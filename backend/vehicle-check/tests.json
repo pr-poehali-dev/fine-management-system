@@ -1,0 +1,14 @@
+{
+  "tests": [
+    {
+      "name": "Check vehicle not found",
+      "method": "GET",
+      "path": "/?license_plate=А000АА000",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "found": false
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
