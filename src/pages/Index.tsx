@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import * as XLSX from 'xlsx';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 interface Fine {
   id: number;
@@ -59,6 +60,7 @@ export default function Index() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedFineId, setSelectedFineId] = useState<number | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { toast } = useToast();
 
   const fetchFines = async () => {
@@ -216,15 +218,89 @@ export default function Index() {
                 <Icon name="Shield" size={32} className="text-primary" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white">
+                <h1 className="text-xl md:text-2xl font-bold text-white">
                   ГИБДД России
                 </h1>
-                <p className="text-blue-100 text-sm">Управление штрафами и нарушениями</p>
+                <p className="text-blue-100 text-xs md:text-sm">Управление штрафами и нарушениями</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-white text-sm">
-              <Icon name="Phone" size={16} />
-              <span>8 (800) 000-00-00</span>
+            <div className="flex items-center gap-4">
+              <div className="hidden md:flex items-center gap-2 text-white text-sm">
+                <Icon name="Phone" size={16} />
+                <span>8 (800) 000-00-00</span>
+              </div>
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="md:hidden text-white">
+                    <Icon name="Menu" size={24} />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center gap-2">
+                      <Icon name="Shield" size={24} className="text-primary" />
+                      Меню
+                    </SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-8 space-y-6">
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-sm text-gray-500 uppercase">Статистика</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Icon name="FileText" size={20} className="text-blue-600" />
+                            <span className="text-sm font-medium">Всего штрафов</span>
+                          </div>
+                          <span className="text-lg font-bold text-blue-600">{stats.total}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Icon name="AlertCircle" size={20} className="text-red-600" />
+                            <span className="text-sm font-medium">Не оплачено</span>
+                          </div>
+                          <span className="text-lg font-bold text-red-600">{stats.unpaid}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Icon name="CheckCircle" size={20} className="text-green-600" />
+                            <span className="text-sm font-medium">Оплачено</span>
+                          </div>
+                          <span className="text-lg font-bold text-green-600">{stats.paid}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Icon name="Wallet" size={20} className="text-gray-700" />
+                            <span className="text-sm font-medium">Общая сумма</span>
+                          </div>
+                          <span className="text-lg font-bold text-gray-900">
+                            {stats.totalAmount.toLocaleString('ru-RU')} ₽
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-sm text-gray-500 uppercase">Действия</h3>
+                      <Button onClick={() => { exportToExcel(); setMobileMenuOpen(false); }} variant="outline" className="w-full justify-start gap-2">
+                        <Icon name="Download" size={18} />
+                        Экспорт в Excel
+                      </Button>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-sm text-gray-500 uppercase">Контакты</h3>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Icon name="Phone" size={18} className="text-primary" />
+                        <span>8 (800) 000-00-00</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Icon name="Mail" size={18} className="text-primary" />
+                        <span>info@gibdd.ru</span>
+                      </div>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </div>
