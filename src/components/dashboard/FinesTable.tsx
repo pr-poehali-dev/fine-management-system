@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import Icon from '@/components/ui/icon';
 import {
   Table,
@@ -46,6 +48,7 @@ interface FinesTableProps {
   onTypeFilterChange: (value: string) => void;
   onPrintFine: (fine: Fine) => void;
   onDeleteFine: (id: number) => void;
+  onDeleteMultiple: (ids: number[]) => void;
   onOpenVinDialog: () => void;
   onExportExcel: () => void;
 }
@@ -63,9 +66,31 @@ export default function FinesTable({
   onTypeFilterChange,
   onPrintFine,
   onDeleteFine,
+  onDeleteMultiple,
   onOpenVinDialog,
   onExportExcel,
 }: FinesTableProps) {
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredFines.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredFines.map(f => f.id));
+    }
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleDeleteSelected = () => {
+    onDeleteMultiple(selectedIds);
+    setSelectedIds([]);
+  };
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
       'Оплачен': 'default',
@@ -90,6 +115,16 @@ export default function FinesTable({
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
+              {selectedIds.length > 0 && (
+                <Button 
+                  onClick={handleDeleteSelected} 
+                  variant="destructive" 
+                  className="gap-2"
+                >
+                  <Icon name="Trash2" size={16} />
+                  Удалить ({selectedIds.length})
+                </Button>
+              )}
               <GibddCheckDialog />
               <Button onClick={onOpenVinDialog} variant="outline" className="gap-2">
                 <Icon name="Search" size={18} />
@@ -147,6 +182,13 @@ export default function FinesTable({
           <Table>
             <TableHeader>
               <TableRow className="bg-primary hover:bg-primary">
+                <TableHead className="text-white font-semibold w-12">
+                  <Checkbox 
+                    checked={selectedIds.length === filteredFines.length && filteredFines.length > 0}
+                    onCheckedChange={toggleSelectAll}
+                    className="border-white data-[state=checked]:bg-white data-[state=checked]:text-primary"
+                  />
+                </TableHead>
                 <TableHead className="text-white font-semibold">Номер постановления</TableHead>
                 <TableHead className="text-white font-semibold">Водитель</TableHead>
                 <TableHead className="text-white font-semibold">ТС</TableHead>
@@ -160,6 +202,12 @@ export default function FinesTable({
             <TableBody>
               {filteredFines.map((fine, index) => (
                 <TableRow key={fine.id} className={index % 2 === 0 ? 'bg-white' : 'bg-blue-50/50'}>
+                  <TableCell>
+                    <Checkbox 
+                      checked={selectedIds.includes(fine.id)}
+                      onCheckedChange={() => toggleSelect(fine.id)}
+                    />
+                  </TableCell>
                   <TableCell className="font-mono text-sm font-medium">
                     {fine.violationNumber}
                   </TableCell>

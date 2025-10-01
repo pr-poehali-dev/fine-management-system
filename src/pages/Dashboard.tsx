@@ -75,6 +75,8 @@ export default function Dashboard() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedFineId, setSelectedFineId] = useState<number | null>(null);
+  const [deleteMultipleDialogOpen, setDeleteMultipleDialogOpen] = useState(false);
+  const [selectedFineIds, setSelectedFineIds] = useState<number[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [vinDialogOpen, setVinDialogOpen] = useState(false);
   const [parkingDialogOpen, setParkingDialogOpen] = useState(false);
@@ -206,6 +208,37 @@ export default function Dashboard() {
   const openDeleteDialog = (id: number) => {
     setSelectedFineId(id);
     setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteMultiple = (ids: number[]) => {
+    setSelectedFineIds(ids);
+    setDeleteMultipleDialogOpen(true);
+  };
+
+  const confirmDeleteMultiple = async () => {
+    try {
+      const deletePromises = selectedFineIds.map(id =>
+        fetch(`${API_URL}?id=${id}`, { method: 'DELETE' })
+      );
+
+      await Promise.all(deletePromises);
+
+      toast({
+        title: 'Успешно',
+        description: `Удалено штрафов: ${selectedFineIds.length}`,
+      });
+      fetchFines();
+      fetchDeletedHistory();
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось удалить штрафы',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeleteMultipleDialogOpen(false);
+      setSelectedFineIds([]);
+    }
   };
 
   const exportToExcel = () => {
@@ -351,6 +384,7 @@ export default function Dashboard() {
               onTypeFilterChange={setTypeFilter}
               onPrintFine={printFine}
               onDeleteFine={openDeleteDialog}
+              onDeleteMultiple={handleDeleteMultiple}
               onOpenVinDialog={() => setVinDialogOpen(true)}
               onExportExcel={exportToExcel}
             />
@@ -402,6 +436,30 @@ export default function Dashboard() {
               className="bg-red-600 hover:bg-red-700"
             >
               Удалить безвозвратно
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteMultipleDialogOpen} onOpenChange={setDeleteMultipleDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Icon name="AlertTriangle" size={24} className="text-red-600" />
+              Массовое удаление штрафов
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Вы уверены, что хотите удалить {selectedFineIds.length} {selectedFineIds.length === 1 ? 'штраф' : 'штрафа(ов)'} из базы данных ГИБДД? 
+              Это действие нельзя отменить. Восстановление данных будет невозможно.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteMultiple}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Удалить все ({selectedFineIds.length})
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
