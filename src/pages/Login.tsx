@@ -115,10 +115,6 @@ export default function Login() {
             </div>
           </CardContent>
         </Card>
-
-        <div className="mt-6 text-center text-sm text-gray-600">
-          <p>© 2024 ГИБДД России. Все права защищены.</p>
-        </div>
       </div>
     </div>
   );
