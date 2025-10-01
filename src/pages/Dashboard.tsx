@@ -287,7 +287,6 @@ export default function Dashboard() {
     
     doc.setFontSize(8);
     doc.text(`Data pechati: ${new Date().toLocaleString('ru-RU')}`, 20, 280);
-    doc.text('GIBDD Rossii', 20, 285);
     
     doc.save(`Postanovlenie_${fine.violationNumber}.pdf`);
     
