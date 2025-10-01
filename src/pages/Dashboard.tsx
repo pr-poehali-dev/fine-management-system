@@ -269,36 +269,27 @@ export default function Dashboard() {
     const doc = new jsPDF();
     
     doc.setFontSize(18);
-    doc.text('ПОСТАНОВЛЕНИЕ', 105, 20, { align: 'center' });
-    doc.text('по делу об административном правонарушении', 105, 28, { align: 'center' });
+    doc.text('POSTANOVLENIE', 105, 20, { align: 'center' } as any);
+    doc.text('po delu ob administrativnom pravonarushenii', 105, 28, { align: 'center' } as any);
     
     doc.setFontSize(12);
-    doc.text(`№ ${fine.violationNumber}`, 105, 40, { align: 'center' });
+    doc.text(`N ${fine.violationNumber}`, 105, 40, { align: 'center' } as any);
     
     doc.setFontSize(10);
-    const details = [
-      ['Водитель:', fine.driverName],
-      ['Транспортное средство:', fine.licensePlate],
-      ['Нарушение:', fine.violationType],
-      ['Дата нарушения:', new Date(fine.violationDate).toLocaleDateString('ru-RU')],
-      ['Место нарушения:', fine.location],
-      ['Сумма штрафа:', `${fine.amount.toLocaleString('ru-RU')} ₽`],
-      ['Статус:', fine.status],
-      ['Описание:', fine.description || '-']
-    ];
-    
-    let y = 60;
-    details.forEach(([label, value]) => {
-      doc.text(label, 20, y);
-      doc.text(value, 80, y);
-      y += 10;
-    });
+    doc.text(`Voditel': ${fine.driverName}`, 20, 60);
+    doc.text(`Transportnoe sredstvo: ${fine.licensePlate}`, 20, 70);
+    doc.text(`Narushenie: ${fine.violationType}`, 20, 80);
+    doc.text(`Data narusheniya: ${new Date(fine.violationDate).toLocaleDateString('ru-RU')}`, 20, 90);
+    doc.text(`Mesto narusheniya: ${fine.location}`, 20, 100);
+    doc.text(`Summa shtrafa: ${fine.amount.toLocaleString('ru-RU')} rub`, 20, 110);
+    doc.text(`Status: ${fine.status}`, 20, 120);
+    doc.text(`Opisanie: ${fine.description || '-'}`, 20, 130);
     
     doc.setFontSize(8);
-    doc.text(`Дата печати: ${new Date().toLocaleString('ru-RU')}`, 20, 280);
-    doc.text('ГИБДД России', 20, 285);
+    doc.text(`Data pechati: ${new Date().toLocaleString('ru-RU')}`, 20, 280);
+    doc.text('GIBDD Rossii', 20, 285);
     
-    doc.save(`Постановление_${fine.violationNumber}.pdf`);
+    doc.save(`Postanovlenie_${fine.violationNumber}.pdf`);
     
     toast({
       title: 'PDF создан',
