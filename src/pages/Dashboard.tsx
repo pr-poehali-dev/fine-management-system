@@ -18,6 +18,7 @@ import 'jspdf-autotable';
 import Icon from '@/components/ui/icon';
 
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import DashboardNav from '@/components/dashboard/DashboardNav';
 import StatsCards from '@/components/dashboard/StatsCards';
 import ChartsSection from '@/components/dashboard/ChartsSection';
 import FinesTable from '@/components/dashboard/FinesTable';
@@ -326,6 +327,8 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
+      <DashboardNav />
+      
       <DashboardHeader
         stats={stats}
         mobileMenuOpen={mobileMenuOpen}
