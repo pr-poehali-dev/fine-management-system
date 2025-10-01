@@ -21,9 +21,10 @@ interface ParkingPass {
 interface ParkingTabProps {
   parkingPasses: ParkingPass[];
   onOpenParkingDialog: () => void;
+  onDeletePass: (id: number) => void;
 }
 
-export default function ParkingTab({ parkingPasses, onOpenParkingDialog }: ParkingTabProps) {
+export default function ParkingTab({ parkingPasses, onOpenParkingDialog, onDeletePass }: ParkingTabProps) {
   const getStatusBadge = (status: string) => {
     const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
       'Активен': 'default',
@@ -57,8 +58,19 @@ export default function ParkingTab({ parkingPasses, onOpenParkingDialog }: Parki
             {parkingPasses.map((pass) => (
               <div key={pass.id} className="border rounded-lg p-4 bg-gradient-to-r from-green-50 to-blue-50">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="font-bold text-lg">№ {pass.passNumber}</div>
-                  {getStatusBadge(pass.status)}
+                  <div className="flex items-center gap-3">
+                    <div className="font-bold text-lg">№ {pass.passNumber}</div>
+                    {getStatusBadge(pass.status)}
+                  </div>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    onClick={() => onDeletePass(pass.id)}
+                    className="gap-1"
+                  >
+                    <Icon name="Trash2" size={14} />
+                    Удалить
+                  </Button>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="flex items-center gap-2">
