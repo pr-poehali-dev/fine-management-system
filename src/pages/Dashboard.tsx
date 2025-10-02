@@ -11,6 +11,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -77,6 +87,7 @@ interface ParkingPass {
 const FINES_API_URL = 'https://functions.poehali.dev/01bce009-aa74-42ea-86d0-482816a6f06f';
 const EXTENDED_API_URL = 'https://functions.poehali.dev/869845df-0ee4-4954-8a12-9b892d8d91df';
 
+
 export default function Dashboard() {
   const [fines, setFines] = useState<Fine[]>([]);
   const [filteredFines, setFilteredFines] = useState<Fine[]>([]);
@@ -93,9 +104,73 @@ export default function Dashboard() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [vinDialogOpen, setVinDialogOpen] = useState(false);
   const [parkingDialogOpen, setParkingDialogOpen] = useState(false);
+  const [addFineDialogOpen, setAddFineDialogOpen] = useState(false);
+  const [newFineData, setNewFineData] = useState({
+    fine_number: '',
+    driver_id: '',
+    vehicle_id: '',
+    amount: '',
+    violation_date: '',
+    violation_type: '',
+    violation_location: '',
+    payment_deadline: '',
+    discount_deadline: '',
+    issuing_authority: '',
+    article_code: '',
+    description: '',
+  });
   
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const handleAddFine = async () => {
+    try {
+      const amount = parseFloat(newFineData.amount);
+      const discount_amount = amount * 0.5;
+
+      const response = await fetch(FINES_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newFineData,
+          driver_id: parseInt(newFineData.driver_id) || null,
+          vehicle_id: parseInt(newFineData.vehicle_id) || null,
+          amount,
+          discount_amount,
+          status: 'Неоплачен',
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: 'Успешно',
+          description: 'Штраф добавлен в базу данных',
+        });
+        setAddFineDialogOpen(false);
+        setNewFineData({
+          fine_number: '',
+          driver_id: '',
+          vehicle_id: '',
+          amount: '',
+          violation_date: '',
+          violation_type: '',
+          violation_location: '',
+          payment_deadline: '',
+          discount_deadline: '',
+          issuing_authority: '',
+          article_code: '',
+          description: '',
+        });
+        fetchFines();
+      }
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось добавить штраф',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const fetchFines = async () => {
     try {
@@ -278,15 +353,15 @@ export default function Dashboard() {
 
   const exportToExcel = () => {
     const exportData = filteredFines.map((fine) => ({
-      'Номер постановления': fine.violationNumber,
-      'Водитель': fine.driverName,
-      'ТС': fine.licensePlate,
-      'Нарушение': fine.violationType,
-      'Дата': new Date(fine.violationDate).toLocaleDateString('ru-RU'),
+      'Номер постановления': fine.violationNumber || fine.fine_number,
+      'Водитель': fine.driverName || 'Неизвестен',
+      'ТС': fine.licensePlate || 'Неизвестен',
+      'Нарушение': fine.violationType || fine.violation_type,
+      'Дата': new Date(fine.violationDate || fine.violation_date).toLocaleDateString('ru-RU'),
       'Сумма (₽)': fine.amount,
       'Статус': fine.status,
-      'Место': fine.location,
-      'Описание': fine.description,
+      'Место': fine.location || fine.violation_location,
+      'Описание': fine.description || '-',
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -308,14 +383,14 @@ export default function Dashboard() {
     doc.text('po delu ob administrativnom pravonarushenii', 105, 28, { align: 'center' } as any);
     
     doc.setFontSize(12);
-    doc.text(`N ${fine.violationNumber}`, 105, 40, { align: 'center' } as any);
+    doc.text(`N ${fine.violationNumber || fine.fine_number}`, 105, 40, { align: 'center' } as any);
     
     doc.setFontSize(10);
-    doc.text(`Voditel': ${fine.driverName}`, 20, 60);
-    doc.text(`Transportnoe sredstvo: ${fine.licensePlate}`, 20, 70);
-    doc.text(`Narushenie: ${fine.violationType}`, 20, 80);
-    doc.text(`Data narusheniya: ${new Date(fine.violationDate).toLocaleDateString('ru-RU')}`, 20, 90);
-    doc.text(`Mesto narusheniya: ${fine.location}`, 20, 100);
+    doc.text(`Voditel': ${fine.driverName || 'Неизвестен'}`, 20, 60);
+    doc.text(`Transportnoe sredstvo: ${fine.licensePlate || 'Неизвестен'}`, 20, 70);
+    doc.text(`Narushenie: ${fine.violationType || fine.violation_type}`, 20, 80);
+    doc.text(`Data narusheniya: ${new Date(fine.violationDate || fine.violation_date).toLocaleDateString('ru-RU')}`, 20, 90);
+    doc.text(`Mesto narusheniya: ${fine.location || fine.violation_location}`, 20, 100);
     doc.text(`Summa shtrafa: ${fine.amount.toLocaleString('ru-RU')} rub`, 20, 110);
     doc.text(`Status: ${fine.status}`, 20, 120);
     doc.text(`Opisanie: ${fine.description || '-'}`, 20, 130);
@@ -323,7 +398,7 @@ export default function Dashboard() {
     doc.setFontSize(8);
     doc.text(`Data pechati: ${new Date().toLocaleString('ru-RU')}`, 20, 280);
     
-    doc.save(`Postanovlenie_${fine.violationNumber}.pdf`);
+    doc.save(`Postanovlenie_${fine.violationNumber || fine.fine_number}.pdf`);
     
     toast({
       title: 'PDF создан',
@@ -338,17 +413,18 @@ export default function Dashboard() {
     totalAmount: fines.filter((f) => f.status !== 'Удален').reduce((acc, f) => acc + f.amount, 0),
   };
 
-  const violationTypes = Array.from(new Set(fines.map((f) => f.violationType)));
-  const statusTypes = Array.from(new Set(fines.map((f) => f.status)));
+  const activeFines = fines.filter((f) => f.status !== 'Удален');
+  const violationTypes = Array.from(new Set(activeFines.map((f) => f.violationType || f.violation_type)));
+  const statusTypes = Array.from(new Set(activeFines.map((f) => f.status)));
 
   const violationChartData = violationTypes.map((type) => ({
     name: type,
-    count: fines.filter((f) => f.violationType === type).length,
+    count: activeFines.filter((f) => (f.violationType || f.violation_type) === type).length,
   }));
 
   const statusChartData = statusTypes.map((status) => ({
     name: status,
-    value: fines.filter((f) => f.status === status).length,
+    value: activeFines.filter((f) => f.status === status).length,
   }));
 
   if (loading) {
@@ -370,6 +446,7 @@ export default function Dashboard() {
         onExportExcel={exportToExcel}
         onOpenVinDialog={() => setVinDialogOpen(true)}
         onOpenParkingDialog={() => setParkingDialogOpen(true)}
+        onOpenAddFineDialog={() => setAddFineDialogOpen(true)}
         onLogout={handleLogout}
       />
 
@@ -443,6 +520,139 @@ export default function Dashboard() {
         apiUrl={EXTENDED_API_URL}
         onSuccess={fetchParkingPasses}
       />
+
+      <Dialog open={addFineDialogOpen} onOpenChange={setAddFineDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Добавить новый штраф</DialogTitle>
+            <DialogDescription>Заполните данные о новом штрафе ГИБДД</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="fine_number">Номер постановления</Label>
+                <Input
+                  id="fine_number"
+                  value={newFineData.fine_number}
+                  onChange={(e) => setNewFineData({ ...newFineData, fine_number: e.target.value })}
+                  placeholder="18810177230408123456"
+                />
+              </div>
+              <div>
+                <Label htmlFor="amount">Сумма штрафа (₽)</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  value={newFineData.amount}
+                  onChange={(e) => setNewFineData({ ...newFineData, amount: e.target.value })}
+                  placeholder="5000"
+                />
+              </div>
+              <div>
+                <Label htmlFor="driver_id">ID водителя</Label>
+                <Input
+                  id="driver_id"
+                  type="number"
+                  value={newFineData.driver_id}
+                  onChange={(e) => setNewFineData({ ...newFineData, driver_id: e.target.value })}
+                  placeholder="1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="vehicle_id">ID транспорта</Label>
+                <Input
+                  id="vehicle_id"
+                  type="number"
+                  value={newFineData.vehicle_id}
+                  onChange={(e) => setNewFineData({ ...newFineData, vehicle_id: e.target.value })}
+                  placeholder="1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="violation_date">Дата нарушения</Label>
+                <Input
+                  id="violation_date"
+                  type="date"
+                  value={newFineData.violation_date}
+                  onChange={(e) => setNewFineData({ ...newFineData, violation_date: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="violation_type">Тип нарушения</Label>
+                <Input
+                  id="violation_type"
+                  value={newFineData.violation_type}
+                  onChange={(e) => setNewFineData({ ...newFineData, violation_type: e.target.value })}
+                  placeholder="Превышение скорости"
+                />
+              </div>
+              <div>
+                <Label htmlFor="payment_deadline">Срок оплаты</Label>
+                <Input
+                  id="payment_deadline"
+                  type="date"
+                  value={newFineData.payment_deadline}
+                  onChange={(e) => setNewFineData({ ...newFineData, payment_deadline: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="discount_deadline">Срок оплаты со скидкой</Label>
+                <Input
+                  id="discount_deadline"
+                  type="date"
+                  value={newFineData.discount_deadline}
+                  onChange={(e) => setNewFineData({ ...newFineData, discount_deadline: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="article_code">Статья КоАП</Label>
+                <Input
+                  id="article_code"
+                  value={newFineData.article_code}
+                  onChange={(e) => setNewFineData({ ...newFineData, article_code: e.target.value })}
+                  placeholder="12.9 ч.2"
+                />
+              </div>
+              <div>
+                <Label htmlFor="issuing_authority">Орган выдачи</Label>
+                <Input
+                  id="issuing_authority"
+                  value={newFineData.issuing_authority}
+                  onChange={(e) => setNewFineData({ ...newFineData, issuing_authority: e.target.value })}
+                  placeholder="ГИБДД МВД России"
+                />
+              </div>
+              <div className="col-span-2">
+                <Label htmlFor="violation_location">Место нарушения</Label>
+                <Input
+                  id="violation_location"
+                  value={newFineData.violation_location}
+                  onChange={(e) => setNewFineData({ ...newFineData, violation_location: e.target.value })}
+                  placeholder="г. Москва, ул. Тверская, д. 1"
+                />
+              </div>
+              <div className="col-span-2">
+                <Label htmlFor="description">Описание</Label>
+                <Input
+                  id="description"
+                  value={newFineData.description}
+                  onChange={(e) => setNewFineData({ ...newFineData, description: e.target.value })}
+                  placeholder="Дополнительная информация"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setAddFineDialogOpen(false)}>
+              Отмена
+            </Button>
+            <Button onClick={handleAddFine}>
+              <Icon name="Plus" size={18} className="mr-2" />
+              Добавить штраф
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>

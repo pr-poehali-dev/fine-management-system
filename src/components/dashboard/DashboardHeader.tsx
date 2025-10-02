@@ -14,6 +14,7 @@ interface DashboardHeaderProps {
   onExportExcel: () => void;
   onOpenVinDialog: () => void;
   onOpenParkingDialog: () => void;
+  onOpenAddFineDialog: () => void;
   onLogout: () => void;
 }
 
@@ -24,6 +25,7 @@ export default function DashboardHeader({
   onExportExcel,
   onOpenVinDialog,
   onOpenParkingDialog,
+  onOpenAddFineDialog,
   onLogout,
 }: DashboardHeaderProps) {
   return (
@@ -98,6 +100,10 @@ export default function DashboardHeader({
 
                   <div className="space-y-4">
                     <h3 className="font-semibold text-sm text-gray-500 uppercase">Действия</h3>
+                    <Button onClick={() => { onOpenAddFineDialog(); setMobileMenuOpen(false); }} className="w-full justify-start gap-2">
+                      <Icon name="Plus" size={18} />
+                      Добавить штраф
+                    </Button>
                     <Button onClick={() => { onExportExcel(); setMobileMenuOpen(false); }} variant="outline" className="w-full justify-start gap-2">
                       <Icon name="Download" size={18} />
                       Экспорт в Excel
