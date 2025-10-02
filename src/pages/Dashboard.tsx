@@ -30,15 +30,27 @@ import DriversTab from '@/components/dashboard/DriversTab';
 
 interface Fine {
   id: number;
-  violationNumber: string;
-  driverName: string;
-  licensePlate: string;
-  violationType: string;
-  violationDate: string;
+  fine_number: string;
+  driver_id: number;
+  vehicle_id: number;
   amount: number;
+  discount_amount: number;
+  violation_date: string;
+  violation_type: string;
+  violation_location: string;
+  payment_deadline: string;
   status: string;
-  location: string;
+  discount_deadline: string;
+  issuing_authority: string;
+  article_code: string;
   description: string;
+  driver_name?: string;
+  license_plate?: string;
+  violationNumber?: string;
+  driverName?: string;
+  violationType?: string;
+  violationDate?: string;
+  location?: string;
 }
 
 interface DeletedFine extends Fine {
@@ -62,7 +74,7 @@ interface ParkingPass {
   notes: string;
 }
 
-const API_URL = 'https://functions.poehali.dev/e4da8fe6-8316-4b83-8d3e-1d73beb1a0bd';
+const FINES_API_URL = 'https://functions.poehali.dev/01bce009-aa74-42ea-86d0-482816a6f06f';
 const EXTENDED_API_URL = 'https://functions.poehali.dev/869845df-0ee4-4954-8a12-9b892d8d91df';
 
 export default function Dashboard() {
@@ -87,14 +99,25 @@ export default function Dashboard() {
 
   const fetchFines = async () => {
     try {
-      const response = await fetch(API_URL);
+      const response = await fetch(FINES_API_URL);
       const data = await response.json();
-      setFines(data.fines);
-      setFilteredFines(data.fines);
+      
+      const mappedFines = data.fines.map((f: any) => ({
+        ...f,
+        violationNumber: f.fine_number,
+        driverName: f.driver_name || 'Не указан',
+        licensePlate: f.license_plate || 'Не указан',
+        violationType: f.violation_type,
+        violationDate: f.violation_date,
+        location: f.violation_location,
+      }));
+      
+      setFines(mappedFines);
+      setFilteredFines(mappedFines);
     } catch (error) {
       toast({
         title: 'Ошибка',
-        description: 'Не удалось загрузить данные',
+        description: 'Не удалось загрузить данные из базы',
         variant: 'destructive',
       });
     } finally {
@@ -129,11 +152,13 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    let filtered = fines.filter(
+    let filtered = fines.filter((fine) => fine.status !== 'Удален');
+    
+    filtered = filtered.filter(
       (fine) =>
-        fine.violationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        fine.driverName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        fine.licensePlate.toLowerCase().includes(searchTerm.toLowerCase())
+        (fine.violationNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        fine.driverName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        fine.licensePlate?.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     if (statusFilter !== 'all') {
@@ -160,14 +185,19 @@ export default function Dashboard() {
     if (!selectedFineId) return;
 
     try {
-      const response = await fetch(`${API_URL}?id=${selectedFineId}`, {
-        method: 'DELETE',
+      const response = await fetch(FINES_API_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          id: selectedFineId, 
+          status: 'Удален'
+        }),
       });
 
       if (response.ok) {
         toast({
           title: 'Успешно',
-          description: 'Штраф удален из базы данных',
+          description: 'Штраф помечен как удаленный',
         });
         fetchFines();
         fetchDeletedHistory();
@@ -219,7 +249,11 @@ export default function Dashboard() {
   const confirmDeleteMultiple = async () => {
     try {
       const deletePromises = selectedFineIds.map(id =>
-        fetch(`${API_URL}?id=${id}`, { method: 'DELETE' })
+        fetch(FINES_API_URL, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, status: 'Удален' }),
+        })
       );
 
       await Promise.all(deletePromises);
@@ -298,10 +332,10 @@ export default function Dashboard() {
   };
 
   const stats = {
-    total: fines.length,
-    unpaid: fines.filter((f) => f.status === 'Не оплачен').length,
+    total: fines.filter((f) => f.status !== 'Удален').length,
+    unpaid: fines.filter((f) => f.status === 'Неоплачен').length,
     paid: fines.filter((f) => f.status === 'Оплачен').length,
-    totalAmount: fines.reduce((acc, f) => acc + f.amount, 0),
+    totalAmount: fines.filter((f) => f.status !== 'Удален').reduce((acc, f) => acc + f.amount, 0),
   };
 
   const violationTypes = Array.from(new Set(fines.map((f) => f.violationType)));
